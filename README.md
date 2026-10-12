@@ -1,6 +1,6 @@
 # Shift CPM Calculator
 
-A single-page tool for Shift's influencer campaign (Aug–Oct 2026). Open `index.html` in a browser; there is no build step.
+A single-page tool for Shift's influencer campaign (Aug–Oct 2026). Open `public/index.html` in a browser; there is no build step.
 
 It shows CPM (cost per 1,000 views), cost per 1,000 accounts reached, and cost per engagement for each creator.
 
@@ -9,7 +9,7 @@ It shows CPM (cost per 1,000 views), cost per 1,000 accounts reached, and cost p
 - **IG Reels**: play counts (Instagram + Facebook) and likes/comments as of 12 Oct 2026.
 - **YouTube / extra TikTok**: public view counts as of 12 Oct 2026.
 
-Fees typed into the table are saved in your browser only. To change the built-in data, edit the `DATA` array in `index.html`.
+Fees typed into the table are saved in your browser only. To change the built-in data, edit the `DATA` array in `public/index.html`.
 
 ## Hosting
-Deployed on Cloudflare Pages, connected to this repo (every push to `main` redeploys). `functions/_middleware.js` puts the whole site behind a password: set the secret `ACCESS_KEY` in the Pages project's Settings > Variables and Secrets. Until it is set, the site returns 503.
+Deployed as a Cloudflare Worker (`shift-cpm-calculat-r`), connected to this repo: every push to `main` redeploys. The page lives in `public/index.html`. `src/index.js` puts the whole site behind a password: set the secret `ACCESS_KEY` in the Worker's Settings > Variables and Secrets. Until it is set, the site returns 503.
