@@ -10,3 +10,6 @@ It shows CPM (cost per 1,000 views), cost per 1,000 accounts reached, and cost p
 - **YouTube / extra TikTok**: public view counts as of 12 Oct 2026.
 
 Fees typed into the table are saved in your browser only. To change the built-in data, edit the `DATA` array in `index.html`.
+
+## Hosting
+Deployed on Cloudflare Pages, connected to this repo (every push to `main` redeploys). `functions/_middleware.js` puts the whole site behind a password: set the secret `ACCESS_KEY` in the Pages project's Settings > Variables and Secrets. Until it is set, the site returns 503.
