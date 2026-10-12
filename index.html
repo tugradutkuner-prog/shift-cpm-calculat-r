@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shift CPM Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: working tool. Quick calculator on top, filterable creator table below, notes last. */
+:root{
+  --bg:#f3f5f4;--card:#ffffff;--ink:#16211f;--mute:#5f6f6b;--line:#dbe2df;
+  --acc:#0b7a6b;--acc-soft:#dcf1ed;--acc-ink:#ffffff;--good:#14804a;--warn:#a85a00;--field:#f3f5f4;
+  --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1716;--card:#18221f;--ink:#e6efec;--mute:#92a5a0;--line:#2b3a36;
+  --acc:#4fd1bd;--acc-soft:#173a35;--acc-ink:#06201c;--good:#4ad08a;--warn:#f0a050;--field:#0f1716;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1716;--card:#18221f;--ink:#e6efec;--mute:#92a5a0;--line:#2b3a36;
+  --acc:#4fd1bd;--acc-soft:#173a35;--acc-ink:#06201c;--good:#4ad08a;--warn:#f0a050;--field:#0f1716;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);padding-inline:16px;padding-block:24px 64px}
+.wrap{max-width:1200px;margin:0 auto}
+h1{font-size:24px;line-height:1.2;margin:0 0 4px;text-wrap:balance}
+h2{font-size:12px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);font-weight:600}
+.sub{color:var(--mute);margin:0 0 20px;max-width:65ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px;min-width:0}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+label{display:block;font-size:12px;color:var(--mute);margin-bottom:4px}
+input,select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--field);color:var(--ink);font:inherit;font-family:var(--mono);font-size:13px}
+input:focus-visible,button:focus-visible,th:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+td input{padding:4px 6px;width:96px;text-align:right}
+.big{font:600 28px/1.1 var(--mono);color:var(--acc);font-variant-numeric:tabular-nums}
+.lbl{font-size:12px;color:var(--mute)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit}
+.chip.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink);font-weight:600}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:960px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+td:not(:first-child):not(:nth-child(2)){font-family:var(--mono);font-size:13px}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);cursor:pointer;user-select:none;font-weight:600}
+tfoot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0}
+.est{color:var(--warn);font-size:10px;margin-left:4px;font-family:var(--sans)}
+.cpm{font-weight:600;color:var(--acc)}.best{color:var(--good)}
+button.btn{background:var(--acc);color:var(--acc-ink);border:0;border-radius:6px;padding:8px 14px;cursor:pointer;font:inherit;font-weight:600}
+button.ghost{background:var(--acc-soft);color:var(--acc)}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+.note{font-size:12px;color:var(--mute);margin:10px 0 0;max-width:80ch}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.row>*{min-width:0}
+.f{width:min(100%,200px)}
+.tog{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);margin:0 0 8px;cursor:pointer}.tog input{width:auto}
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}.kpis .big{font-size:22px}
+#addForm{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+#addForm[hidden]{display:none}
+#status{font-size:12px;color:var(--good);min-height:18px;margin-top:8px}
+textarea{width:100%;height:90px;font:12px var(--mono);background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:6px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Shift CPM Calculator</h1>
+<p class="sub">Influencer campaign stats, Aug to Oct 2026. Enter each creator's fee to get CPM (cost per 1,000 views), cost per 1,000 reached, and cost per engagement.</p>
+
+<div class="card">
+  <h2>Teamfluencer package</h2>
+  <p class="note" style="margin:0 0 12px">₺130,000 + KDV for all 13 creators in the two Google Drive reports (5 Instagram Reels, 8 TikTok). Split evenly, that is ₺10,000 each before KDV. Override any creator's fee in the table if the real split differs.</p>
+  <div class="kpis" id="pkg"></div>
+</div>
+
+<div class="card">
+  <h2>Quick calculator</h2>
+  <div class="grid">
+    <div><label for="qCost">Fee (₺)</label><input id="qCost" type="number" min="0" value="10000"></div>
+    <div><label for="qViews">Views</label><input id="qViews" type="number" min="0" value="50000"></div>
+    <div><div class="lbl">CPM = fee ÷ views × 1,000</div><div class="big" id="qCpm">–</div></div>
+    <div><label for="qTarget">Target CPM (₺)</label><input id="qTarget" type="number" min="0" value="150"><div class="lbl" id="qMax"></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Creators</h2>
+  <div class="chips" id="chips"></div>
+  <div class="row">
+    <div class="f"><label for="bulk">Same fee for visible rows (₺)</label><input id="bulk" type="number" min="0" placeholder="e.g. 5000"></div>
+    <button class="btn ghost" id="bulkBtn">Apply</button>
+    <label class="tog" for="kdv"><input id="kdv" type="checkbox"> Include KDV (20%) in costs</label>
+    <div style="flex:1"></div>
+    <button class="btn ghost" id="addToggle">Add creator</button>
+    <button class="btn" id="copy">Copy as CSV</button>
+  </div>
+  <form id="addForm" hidden>
+    <div class="row">
+      <div class="f"><label for="aN">Name</label><input id="aN" type="text" style="font-family:var(--sans)" required></div>
+      <div class="f"><label for="aP">Platform</label><select id="aP"><option>Reels report</option><option>TikTok</option><option>IG Reels</option><option>YouTube</option></select></div>
+      <div class="f"><label for="aV">Views</label><input id="aV" type="number" min="0" value="0"></div>
+      <div class="f"><label for="aL">Likes</label><input id="aL" type="number" min="0" value="0"></div>
+      <div class="f"><label for="aC">Comments</label><input id="aC" type="number" min="0" value="0"></div>
+      <button class="btn" type="submit">Add</button>
+    </div>
+  </form>
+  <div id="status" role="status"></div>
+  <div class="tw" style="margin-top:8px"><table id="tbl"><thead></thead><tbody></tbody><tfoot></tfoot></table></div>
+  <p class="note">Engagements = likes + comments + saves + shares. CPM (reach) uses accounts reached, which only the Reels report includes. Click a column header to sort. Fees are remembered in this browser only.</p>
+  <textarea id="csvBox" hidden readonly aria-label="CSV output"></textarea>
+</div>
+
+<div class="card">
+  <h2>Data notes</h2>
+  <p class="note" style="margin-top:0">Reels and TikTok figures come from the two Teamfluencer reports. The TikTok deck's total of 101,078 views does not match its eight creators, which add up to 92,121, so rows use the per-creator numbers. IG Reels views are total plays (Instagram plus Facebook cross-posts) as of 12 Oct 2026, so they keep growing. Shares aren't available for these, so engagements count likes, comments and the shares seen on the post page. Reels report shares look high against the screenshots, so treat that cost per engagement with care.</p>
+</div>
+</div>
+
+<script>
+const IG='https://www.instagram.com/p/';
+// Sources: Teamfluencer decks (Reels report, TikTok), Instagram reel play counts (IG + Facebook, 12 Oct 2026), YouTube.
+const DATA=[
+ {p:'Reels report',pkg:1,n:'Cennet Gürel',v:55947,r:45797,l:218,c:25,s:571,sh:1000},
+ {p:'Reels report',pkg:1,n:'Evin Oktay Koyun',v:103780,r:85406,l:325,c:99,s:1000,sh:1300},
+ {p:'Reels report',pkg:1,n:'Merve Çelikkol',v:84491,r:33386,l:924,c:120,s:310,sh:8100},
+ {p:'Reels report',pkg:1,n:'Gülfer Ömer',v:75179,r:50330,l:240,c:55,s:497,sh:1100},
+ {p:'Reels report',pkg:1,n:'Dicle Atay',v:1632,r:940,l:57,c:6,s:2,sh:5},
+ {p:'TikTok',pkg:1,n:'Seher Dağdeviren',v:2800,l:15,c:7,s:15,sh:30},
+ {p:'TikTok',pkg:1,n:'Merve Vural',v:60400,l:196,c:17,s:14,sh:4},
+ {p:'TikTok',pkg:1,n:'Eda Akbulut',v:1612,l:14,c:3,s:10,sh:9},
+ {p:'TikTok',pkg:1,n:'Merve Solak Ceylan',v:8768,l:88,c:28,s:108,sh:91},
+ {p:'TikTok',pkg:1,n:'Emre Dalak',v:4278,l:48,c:17,s:43,sh:60},
+ {p:'TikTok',pkg:1,n:'Burcu Ocak Vitrinplus',v:10300,l:112,c:32,s:141,sh:208},
+ {p:'TikTok',pkg:1,n:'Ecem Erbilgin',v:1416,l:17,c:2,s:6,sh:8},
+ {p:'TikTok',pkg:1,n:'Pınar Bulut',v:2547,l:11,c:10,s:9,sh:12},
+ {p:'TikTok',n:'@santiyedekisef (5 Oct)',u:'https://www.tiktok.com/@santiyedekisef/video/7693214760480886023',v:611200,l:12900,c:250,s:9437,sh:4953},
+ {p:'IG Reels',n:'@tekirdagmucahittesisat (27 Jul)',u:'DbTRg2qTtE5',v:1543289,l:9570,c:842,sh:173},
+ {p:'IG Reels',n:'@tekirdagmucahittesisat (30 Sep)',u:'Dd3imV9M6EM',v:1686344,l:16791,c:592,sh:154},
+ {p:'IG Reels',n:'@dolunay_ozeren',u:'DbvdkG3K0Nw',v:362670,l:5242,c:21762,sh:149},
+ {p:'IG Reels',n:'@selmanbozkir (12 Aug)',u:'Db8dkSbsfgV',v:3710282,l:15011,c:1260,sh:228},
+ {p:'IG Reels',n:'@selmanbozkir (3 Aug)',u:'DblYl0mMSVm',v:1472783,l:20380,c:1099,sh:335},
+ {p:'IG Reels',n:'@neseliminimalist (2 Oct)',u:'Dd_RcL2tLfC',v:495360,l:3378,c:844,sh:64},
+ {p:'IG Reels',n:'@neseliminimalist (20 Aug)',u:'DcQz3JlNKiY',v:229206,l:1558,c:1030,sh:57},
+ {p:'IG Reels',n:'@ulkuhur',u:'DcvF6arNPs_',v:966929,l:2726,c:5503,sh:51},
+ {p:'IG Reels',n:'@tesisat_akademi',u:'Dd63-bnMDns',v:25882,l:183,c:27,sh:5},
+ {p:'IG Reels',n:'@alfa_disli_makina',u:'Dd9TMgate8G',v:89109,l:1151,c:49,sh:9},
+ {p:'IG Reels',n:'@santiyedekiseff',u:'DeHluMhBnf5',v:528653,l:7006,c:335,sh:77},
+ {p:'IG Reels',n:'@uludag.otomotiv',u:'DeKLYjsNudQ',v:73469,l:714,c:48,sh:6},
+ {p:'YouTube',n:'Robotları Eğiterek Saatlik 500 TL kazanın',u:'https://www.youtube.com/watch?v=wmVW0D4N5zA',v:27487},
+].map((d,i)=>({id:i,...d}));
+const PKG=130000,KDV=0.20,PKG_N=DATA.filter(d=>d.pkg).length;
+
+const K='shiftCpm.v1';
+let st={costs:{},custom:[]};
+try{st=Object.assign(st,JSON.parse(localStorage.getItem(K)||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}};
+let filter='All',sortKey=null,sortDir=1;
+const $=s=>document.querySelector(s);
+const N=x=>x==null||x===''||isNaN(x)?null:+x;
+const fmt=(x,d=0)=>x==null?'–':x.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const tl=(x,d=0)=>x==null?'–':'₺'+fmt(x,d);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function rows(){
+  return DATA.concat(st.custom).map(m=>{
+    const views=m.v;
+    const eng=(m.l||0)+(m.c||0)+(m.s||0)+(m.sh||0);
+    const base=N(st.costs[m.id])??(m.pkg?PKG/PKG_N:null);
+    const cost=base==null?null:base*($('#kdv').checked?1+KDV:1);
+    return {...m,views,eng,cost,
+      cpm:cost!=null&&views?cost/views*1000:null,
+      cpmR:cost!=null&&m.r?cost/m.r*1000:null,
+      cpe:cost!=null&&eng?cost/eng:null,
+      er:views?eng/views*100:null};
+  });
+}
+const COLS=[['n','Creator'],['p','Platform'],['views','Views'],['r','Reach'],['eng','Engagements'],['er','Eng. rate'],['cost','Fee (₺, excl. KDV)'],['cpm','CPM'],['cpmR','CPM (reach)'],['cpe','Cost / eng.']];
+
+function render(){
+  $('#chips').innerHTML=['All','Reels report','TikTok','IG Reels','YouTube'].map(p=>`<button class="chip ${p===filter?'on':''}" data-p="${p}">${p}</button>`).join('');
+  $('#tbl thead').innerHTML='<tr>'+COLS.map(c=>`<th tabindex="0" data-k="${c[0]}">${c[1]}${sortKey===c[0]?(sortDir>0?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
+  let rs=rows().filter(r=>filter==='All'||r.p===filter);
+  if(sortKey)rs.sort((a,b)=>{const x=a[sortKey],y=b[sortKey];if(x==null)return 1;if(y==null)return -1;return (x>y?1:x<y?-1:0)*sortDir});
+  const cp=rs.map(r=>r.cpm).filter(x=>x!=null),best=Math.min(...cp);
+  $('#tbl tbody').innerHTML=rs.map(r=>{
+    const link=r.u?(r.u.startsWith('http')?r.u:IG+r.u+'/'):null;
+    const nm=link?`<a href="${link}" target="_blank" rel="noopener">${esc(r.n)}</a>`:esc(r.n);
+    return `<tr><td>${nm}</td><td>${r.p}</td>
+    <td>${fmt(r.views)}</td>
+    <td>${fmt(r.r)}</td><td>${fmt(r.eng)}</td><td>${r.er==null?'–':fmt(r.er,1)+'%'}</td>
+    <td><input type="number" min="0" aria-label="Fee for ${esc(r.n)}" data-id="${r.id}" value="${N(st.costs[r.id])??(r.pkg?PKG/PKG_N:'')}" placeholder="fee">${r.pkg?'<div class="lbl">package</div>':''}</td>
+    <td class="cpm ${cp.length>1&&r.cpm===best?'best':''}">${tl(r.cpm,2)}</td>
+    <td>${tl(r.cpmR,2)}</td><td>${tl(r.cpe,2)}</td></tr>`}).join('');
+  const w=rs.filter(r=>r.cost!=null&&r.views);
+  const tc=w.reduce((a,r)=>a+r.cost,0),tv=w.reduce((a,r)=>a+r.views,0),te=w.reduce((a,r)=>a+r.eng,0);
+  const tr=w.filter(r=>r.r),trc=tr.reduce((a,r)=>a+r.cost,0),trr=tr.reduce((a,r)=>a+r.r,0);
+  $('#tbl tfoot').innerHTML=`<tr><td>Blended (${w.length} with a fee)</td><td></td><td>${fmt(tv)}</td><td>${trr?fmt(trr):'–'}</td><td>${fmt(te)}</td><td></td><td>${tl(tc)}</td>
+  <td class="cpm">${tl(tv?tc/tv*1000:null,2)}</td><td>${tl(trr?trc/trr*1000:null,2)}</td><td>${tl(te?tc/te:null,2)}</td></tr>`;
+}
+function pkg(){
+  const f=1+($('#kdv').checked?KDV:0),rs=rows().filter(r=>r.pkg);
+  const c=rs.reduce((a,r)=>a+(r.cost||0),0),v=rs.reduce((a,r)=>a+(r.views||0),0),e=rs.reduce((a,r)=>a+r.eng,0);
+  const rr=rs.filter(r=>r.r),rc=rr.reduce((a,r)=>a+r.cost,0),rv=rr.reduce((a,r)=>a+r.r,0);
+  const k=(l,x)=>`<div><div class="lbl">${l}</div><div class="big">${x}</div></div>`;
+  $('#pkg').innerHTML=k('Cost'+(f>1?' incl. KDV':' excl. KDV'),tl(c))+k('Views',fmt(v))+k('CPM',tl(v?c/v*1000:null,2))+k('CPM (reach, Reels)',tl(rv?rc/rv*1000:null,2))+k('Cost / engagement',tl(e?c/e:null,2));
+}
+function quick(){
+  const c=N($('#qCost').value),v=N($('#qViews').value),t=N($('#qTarget').value);
+  $('#qCpm').textContent=c!=null&&v?tl(c/v*1000,2):'–';
+  $('#qMax').textContent=t!=null&&v?`Max fee at this CPM: ${tl(t*v/1000,0)}`:'';
+}
+document.addEventListener('input',e=>{
+  const id=e.target.dataset&&e.target.dataset.id;
+  if(id!==undefined){const k=isNaN(id)?id:+id;
+    e.target.value===''?delete st.costs[k]:st.costs[k]=+e.target.value;save();render();pkg();
+    const n=document.querySelector(`input[data-id="${id}"]`);if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length)}}
+  else if(['qCost','qViews','qTarget'].includes(e.target.id))quick();
+  else if(e.target.id==='kdv'){render();pkg()}
+});
+document.addEventListener('click',e=>{
+  const p=e.target.closest('.chip');if(p){filter=p.dataset.p;render()}
+  const h=e.target.closest('th');if(h){const k=h.dataset.k;sortDir=sortKey===k?-sortDir:1;sortKey=k;render()}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('th'))e.target.click()});
+$('#bulkBtn').onclick=()=>{const v=N($('#bulk').value);if(v==null)return;
+  rows().filter(r=>filter==='All'||r.p===filter).forEach(r=>st.costs[r.id]=v);save();render();pkg()};
+$('#addToggle').onclick=()=>{const f=$('#addForm');f.hidden=!f.hidden;if(!f.hidden)$('#aN').focus()};
+$('#addForm').onsubmit=e=>{e.preventDefault();
+  st.custom.push({id:'c'+Date.now(),p:$('#aP').value,n:$('#aN').value.trim(),v:+$('#aV').value||0,l:+$('#aL').value||0,c:+$('#aC').value||0,s:0,sh:0});
+  save();e.target.reset();e.target.hidden=true;render()};
+$('#copy').onclick=async()=>{
+  const rs=rows().filter(r=>filter==='All'||r.p===filter);
+  const h=['Creator','Platform','Views','Reach','Likes','Comments','Saves','Shares','Fee','CPM','CPM reach','Cost per engagement'];
+  const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
+  const csv=[h.join(',')].concat(rs.map(r=>[q(r.n),r.p,r.views??'',r.r??'',r.l??'',r.c??'',r.s??'',r.sh??'',r.cost??'',r.cpm?.toFixed(2)??'',r.cpmR?.toFixed(2)??'',r.cpe?.toFixed(2)??''].join(','))).join('\n');
+  const box=$('#csvBox'),s=$('#status');
+  try{await navigator.clipboard.writeText(csv);box.hidden=true;s.textContent='CSV copied. Paste it into Sheets or Excel.'}
+  catch(err){box.hidden=false;box.value=csv;box.select();s.textContent='Copy blocked here. Select the text below and copy it.'}
+};
+quick();render();pkg();
+</script>
+</body>
+</html>
